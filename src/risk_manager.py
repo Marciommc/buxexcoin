@@ -28,7 +28,7 @@ class RiskManager:
     def _load_profit(self):
         """Carrega o lucro acumulado no SQLite"""
         import datetime
-        hoje_str = str(datetime.utcnow().date())
+        hoje_str = str(datetime.datetime.utcnow().date())
         
         self.lucro_diario_atual_usd = db.load_daily_profit(hoje_str, self.mode)
         self.data_ultima_execucao = hoje_str
