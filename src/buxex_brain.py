@@ -8,6 +8,8 @@ import datetime
 from notifier import BuxexNotifier
 from database import db
 
+OHLCV_COLUMNS = ["Date", "Open", "High", "Low", "Close", "Volume"]
+
 class BuxexBrain:
     def __init__(self, notifier=None):
         print("Iniciando Mente do Agente SSAG BuxexCoin...")
@@ -19,6 +21,23 @@ class BuxexBrain:
         self.executor = Executor()
         self.risk_manager = RiskManager(notifier=self.notifier)
         self.sentiment = SentimentAnalyzer()
+
+    def _fetch_ohlcv_df(self, symbol: str, timeframe: str, limit: int) -> pd.DataFrame:
+        """
+        Busca candles reais da Binance via CCXT e retorna DataFrame OHLCV.
+        Retorna DataFrame vazio em caso de falha.
+        """
+        try:
+            raw = self.executor.exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+            if not raw:
+                print(f"[BuxexBrain] ⚠️ Sem dados OHLCV para {symbol} ({timeframe})")
+                return pd.DataFrame()
+            df = pd.DataFrame(raw, columns=["Date", "Open", "High", "Low", "Close", "Volume"])
+            df["Date"] = pd.to_datetime(df["Date"], unit="ms")
+            return df
+        except Exception as e:
+            print(f"[BuxexBrain] ❌ Erro ao buscar candles {symbol} ({timeframe}): {e}")
+            return pd.DataFrame()
 
     def loop_decision(self):
         """
@@ -99,40 +118,26 @@ class BuxexBrain:
         print(f"[BuxexBrain] Saldo Disponível: ${balance_usdt:.2f}")
 
         for coin in target_coins:
-            # Em um cenário real, o CCXT baixaria os candles com o método fetch_ohlcv.
-            # Aqui simulamos o download para construir um df para o pandas-ta.
-            # df_candles = self.executor.exchange.fetch_ohlcv(coin, timeframe='1h')
-            # convert para DF
-            
-            # Simulando um candle dataframe (Fallback dryrun/setup)
-            df_mock = pd.DataFrame({
-                "Date": pd.date_range(end=pd.Timestamp.now(), periods=100),
-                "Open": [10.0]*100,
-                "High": [11.0]*100,
-                "Low": [9.0]*100,
-                "Close": [10.5]*100,
-                "Volume": [1000]*100
-            })
-            # --- NOVO: FILTRO DE TENDÊNCIA 4H (ARCHON Edition) ---
+            # --- FILTRO DE TENDÊNCIA 4H: candles reais da Binance ---
             print(f"[BuxexBrain] Verificando filtro direcional de 4h para {coin}...")
-            df_4h_mock = pd.DataFrame({
-                "Date": pd.date_range(end=pd.Timestamp.now(), periods=250),
-                "Close": [10.5]*250, # Acima da tendencia simulada
-            })
-            # Na API real: df_4h = self.executor.exchange.fetch_ohlcv(coin, timeframe='4h')
-            # convert para DF e passa pra func
-            
-            filtro_4h = self.analyzer.analyze_4h_trend(df_4h_mock)
+            df_4h = self._fetch_ohlcv_df(coin, timeframe="4h", limit=250)
+            if df_4h.empty:
+                print(f"[BuxexBrain] ⚠️ Sem dados 4h para {coin}. Pulando.")
+                continue
+
+            filtro_4h = self.analyzer.analyze_4h_trend(df_4h)
             if filtro_4h["signal"] == "rejected":
-                 print(f"[BuxexBrain] 🛑 Mercados em queda. {coin} ignorada: {filtro_4h['reason']}")
-                 continue # Pula a moeda e vai pra proxima
-                 
+                print(f"[BuxexBrain] 🛑 {coin} fora da tendência: {filtro_4h['reason']}")
+                continue
             # --- FIM DO FILTRO 4H ---
-            
-            # Forçando uma tendência de alta no mock nos finais pra acionar o buy no gráfico menor
-            df_mock.loc[99, 'Close'] = 11.0 
-            
-            analysis = self.analyzer.analyze_trend(df_mock)
+
+            # --- ANÁLISE 1H: candles reais da Binance ---
+            df_1h = self._fetch_ohlcv_df(coin, timeframe="1h", limit=100)
+            if df_1h.empty:
+                print(f"[BuxexBrain] ⚠️ Sem dados 1h para {coin}. Pulando.")
+                continue
+
+            analysis = self.analyzer.analyze_trend(df_1h)
             print(f"[BuxexBrain] Analisando Entrada (Curto Prazo) para {coin}... Sinal: {analysis['signal']} | Reason: {analysis['reason']}")
 
             if analysis["signal"] == "buy":
