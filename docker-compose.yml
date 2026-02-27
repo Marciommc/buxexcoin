@@ -20,9 +20,9 @@ services:
     env_file:
       - .env
     ports:
-      - "5401:8501"
+      - "5501:8501"
     volumes:
-      - buxex_data:/app/data  # Volume compartilhado nomeado garante acesso ao mesmo banco
+      - buxex_data:/app/data # Volume compartilhado nomeado garante acesso ao mesmo banco
 
 volumes:
   buxex_data:
