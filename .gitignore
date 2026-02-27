@@ -1,0 +1,30 @@
+# Chaves e Ambientes
+.env
+
+# Bancos de dados e volumes docker
+data/
+*.db
+*.sqlite3
+sandbox_state.db
+
+# Históricos passados obsoletos (Fase 1-5)
+config/daily_profit.json
+config/trades_history.csv
+config/simulated_trades.json
+
+# Python 
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VSCode / IDEs
+.vscode/
+.idea/
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db

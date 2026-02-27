@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  buxex_core_bot:
+    build: .
+    container_name: buxex_core_bot
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env
+    environment:
+      - SANDBOX_MODE=true # Operação de fábrica por segurança
+
+  buxex_dashboard:
+    build: .
+    container_name: buxex_dashboard
+    restart: unless-stopped
+    command: [ "streamlit", "run", "src/dashboard.py", "--server.port=8501", "--server.address=0.0.0.0" ]
+    ports:
+      - "5401:8501"
+    volumes:
+      - ./data:/app/data:rw # Compartilha SQLite gerado pelo robô com permissão escrita explicita
+      - ./.env:/app/.env

@@ -1,0 +1,6 @@
+python-binance==1.0.19
+pandas-ta
+ccxt==4.2.14
+python-dotenv==1.0.0
+streamlit
+rich
