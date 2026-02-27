@@ -72,17 +72,22 @@ Seu terminal rodou e a UI do Buxexcoin está rodando em plano de fundo no `local
 
 1. Acesse o **Plesk Web Interface**.
 2. Vá em **Add Domain** ou **Add Subdomain** (ex: `dashboard.seudominio.com`).
-3. Nas configurações do domínio criado, vá até **Apache & nginx Settings**.
-4. Desça a rolagem até: **Additional nginx directives** e cole essa regra de proxy reverso puro:
+3. Nas configurações do domínio criado, vá até **Apache & nginx Settings** (ou apenas **Apache Settings** dependendo da sua versão).
+4. Desça a rolagem até a seção **Additional directives for HTTP** e **Additional directives for HTTPS**, e cole as seguintes diretivas do Apache em ambas as caixas para fazer o proxy reverso:
 
-```nginx
-location / {
-    proxy_pass http://127.0.0.1:5401;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-}
+```apache
+ProxyRequests Off
+ProxyPreserveHost On
+
+<Proxy *>
+    Require all granted
+</Proxy>
+
+ProxyPass / http://127.0.0.1:5401/
+ProxyPassReverse / http://127.0.0.1:5401/
 ```
+
+*Nota: Certifique-se de que os módulos `proxy` e `proxy_http` do Apache estejam ativados no seu servidor VPS.*
 
 Clique em Aplicar/OK! Pronto! 🎉 
 Você poderá acessar a Dashboard maravilhosamente pela URL pública em https, enquanto o Bot BuxexBrain fica orquestrando de forma indestrutível conectado ao SQLite no backend.

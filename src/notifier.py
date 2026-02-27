@@ -13,10 +13,9 @@ class BuxexNotifier:
         self.email_pass = os.getenv("EMAIL_PASS", "sua_senha_app") # Senha de aplicativo do Google
         self.destinatario = os.getenv("EMAIL_DESTINO", "seu_email_destino@gmail.com")
         
-        # Configuração WhatsApp (Exemplo via Webhook/Evolution API)
-        self.whatsapp_webhook = os.getenv("WHATSAPP_WEBHOOK", "")
-        self.whatsapp_evol_apikey = os.getenv("EVOLUTION_API_KEY", "")
-        self.destinatario_zap = os.getenv("WHATSAPP_DESTINO", "5592992790506")
+        # Configuração WhatsApp (CallMeBot API Gratuita)
+        self.whatsapp_apikey = os.getenv("CALLMEBOT_API_KEY", "")
+        self.destinatario_zap = os.getenv("WHATSAPP_DESTINO", "+5592992790506")
 
     def enviar_email(self, assunto, mensagem):
         if self.email_user == "seu_email@gmail.com":
@@ -37,33 +36,23 @@ class BuxexNotifier:
             print(f"❌ Erro ao enviar e-mail: {e}")
 
     def enviar_whatsapp(self, texto):
-        if not self.whatsapp_webhook:
-            print(f"[Notifier] WhatsApp simulado: {texto}")
+        if not self.whatsapp_apikey:
+            print(f"[Notifier] WhatsApp simulado (API KEY Não configurada): {texto}")
             return
             
-        headers = {"Content-Type": "application/json"}
-        if self.whatsapp_evol_apikey:
-            headers["apikey"] = self.whatsapp_evol_apikey
-            
-        payload = {
-            "number": self.destinatario_zap,
-            "options": {
-                "delay": 1200,
-                "presence": "composing"
-            },
-            "textMessage": {
-                "text": texto
-            }
-        }
+        import urllib.parse
+        texto_codificado = urllib.parse.quote(texto)
+        
+        url_callmebot = f"https://api.callmebot.com/whatsapp.php?phone={self.destinatario_zap}&text={texto_codificado}&apikey={self.whatsapp_apikey}"
         
         try:
-            resp = requests.post(self.whatsapp_webhook, json=payload, headers=headers, timeout=5)
-            if resp.status_code in (200, 201):
-                print("📲 Alerta enviado para o WhatsApp com sucesso.")
+            resp = requests.get(url_callmebot, timeout=10)
+            if resp.status_code == 200:
+                print("📲 Alerta enviado para o WhatsApp com sucesso (CallMeBot).")
             else:
-                print(f"❌ Erro ao enviar WhatsApp do Evolution: {resp.status_code} - {resp.text}")
+                print(f"❌ Erro ao enviar WhatsApp do CallMeBot: {resp.status_code} - {resp.text}")
         except Exception as e:
-            print(f"❌ Erro de conexão com a Evolution API: {e}")
+            print(f"❌ Erro de conexão com a CallMeBot API: {e}")
 
     def alertar_trade(self, symbol: str, progresso_meta_pct: float, meta_valor: float):
         msg = (

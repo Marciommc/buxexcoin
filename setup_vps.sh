@@ -36,10 +36,9 @@ if [ ! -f ".env" ]; then
     read -sp "EMAIL_PASS (Notificações): " EMAIL_PASS
     echo ""
     read -p "EMAIL_DESTINO (Alvos dos reports): " EMAIL_DEST
-    read -p "WHATSAPP_WEBHOOK (URL completa Evolution /sendText): " WPP_HOOK
-    read -sp "EVOLUTION_API_KEY (Global API Key ou Instance Token): " EVOL_KEY
+    read -p "CALLMEBOT_API_KEY (Envie mensagem apikey p/ bot do Zap): " CALL_KEY
     echo ""
-    read -p "WHATSAPP_DESTINO (Ex: DDI+DDD+Num = 5592992790506): " WPP_DEST
+    read -p "WHATSAPP_DESTINO (Exato com sinal + Ex: +5592992790506): " WPP_DEST
     
     echo "BINANCE_API_KEY=$API_KEY" > .env
     echo "BINANCE_SECRET_KEY=$SECRET_KEY" >> .env
@@ -47,8 +46,7 @@ if [ ! -f ".env" ]; then
     echo "EMAIL_USER=$EMAIL_USER" >> .env
     echo "EMAIL_PASS=$EMAIL_PASS" >> .env
     echo "EMAIL_DESTINO=$EMAIL_DEST" >> .env
-    echo "WHATSAPP_WEBHOOK=$WPP_HOOK" >> .env
-    echo "EVOLUTION_API_KEY=$EVOL_KEY" >> .env
+    echo "CALLMEBOT_API_KEY=$CALL_KEY" >> .env
     echo "WHATSAPP_DESTINO=$WPP_DEST" >> .env
     echo "" >> .env
     echo "TRADE_STRATEGY=SSAG-v2" >> .env
