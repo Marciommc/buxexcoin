@@ -15,6 +15,7 @@ def load_daily_profit(mode: str):
     try:
         return db.load_daily_profit(hoje_str, mode)
     except Exception as e:
+        st.warning(f"Erro ao carregar lucro diário: {e}")
         return 0.0
 
 def load_trades(mode: str):
@@ -22,11 +23,18 @@ def load_trades(mode: str):
         trades = db.get_all_trades(mode)
         if trades:
             df = pd.DataFrame(trades)
-            # Adaptando a visualização
-            df = df.rename(columns={"timestamp": "Data", "symbol": "Ativo", "amount": "Quantidade", "profit_brl": "P/L BRL", "type": "Lado"})
+            df = df.rename(columns={
+                "timestamp": "Data",
+                "symbol": "Ativo",
+                "amount": "Quantidade",
+                "profit_brl": "P/L BRL",
+                "type": "Lado",
+                "status": "Status",
+                "profit_pct": "P/L %"
+            })
             return df
-    except Exception:
-        pass
+    except Exception as e:
+        st.warning(f"Erro ao carregar trades: {e}")
     return pd.DataFrame()
 
 def load_balance_history(mode: str):
@@ -34,17 +42,26 @@ def load_balance_history(mode: str):
         history = db.load_balance_history(mode)
         if history:
              return pd.DataFrame(history, columns=["Data", "Balanço"])
-    except Exception:
-        pass
+    except Exception as e:
+        st.warning(f"Erro ao carregar histórico de balanço: {e}")
     return pd.DataFrame()
 
 # --- HEADER ---
 st.title("🤖 BuxexCoin | Monitor de Operações")
 st.markdown("Dashboard Analítico do Motor Autônomo SSAG")
+
+# Mostra caminho do banco para debug
+db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "buxex_data.db")
+db_exists = os.path.exists(db_path)
+if not db_exists:
+    st.error(f"⚠️ Banco de dados não encontrado em: `{db_path}`. O robô ainda não gerou dados ou o volume não está montado corretamente.")
+else:
+    db_size_kb = os.path.getsize(db_path) / 1024
+    st.caption(f"✅ Banco conectado: `{db_path}` ({db_size_kb:.1f} KB)")
+
 st.divider()
 
 # --- METRIC SUMMARY ---
-# Toggle
 modo_selecionado = st.radio("Selecione o Ambiente de Visualização:", ["SANDBOX", "REAL"], horizontal=True)
 
 col1, col2, col3 = st.columns(3)
@@ -87,14 +104,15 @@ if not df_trades.empty:
     st.dataframe(df_trades.sort_values(by="Data", ascending=False), use_container_width=True)
     
     st.subheader(f"Gráfico de Performance {modo_selecionado} (P/L)")
-    # Se houver P/L, exibe:
     if "P/L BRL" in df_trades.columns:
          st.bar_chart(df_trades, x="Data", y="P/L BRL", color="Ativo")
 else:
-    st.info(f"Nenhum trade registrado no ambiente {modo_selecionado} ainda!")
+    st.info(f"Nenhum trade registrado no ambiente {modo_selecionado} ainda. O robô pode ainda estar inicializando ou aguardando oportunidades.")
 
+st.divider()
 st.caption(f"Última atualização: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-# Add a refresh button
-if st.button("Atualizar Dados"):
-    st.rerun()
+col_btn1, col_btn2 = st.columns([1, 5])
+with col_btn1:
+    if st.button("🔄 Atualizar Dados"):
+        st.rerun()

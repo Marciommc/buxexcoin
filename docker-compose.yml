@@ -5,19 +5,25 @@ services:
     build: .
     container_name: buxex_core_bot
     restart: unless-stopped
-    volumes:
-      - ./data:/app/data
-      - ./.env:/app/.env
+    env_file:
+      - .env
     environment:
       - SANDBOX_MODE=true # Operação de fábrica por segurança
+    volumes:
+      - buxex_data:/app/data
 
   buxex_dashboard:
     build: .
     container_name: buxex_dashboard
     restart: unless-stopped
     command: [ "streamlit", "run", "src/dashboard.py", "--server.port=8501", "--server.address=0.0.0.0" ]
+    env_file:
+      - .env
     ports:
       - "5401:8501"
     volumes:
-      - ./data:/app/data:rw # Compartilha SQLite gerado pelo robô com permissão escrita explicita
-      - ./.env:/app/.env
+      - buxex_data:/app/data  # Volume compartilhado nomeado garante acesso ao mesmo banco
+
+volumes:
+  buxex_data:
+    driver: local
