@@ -4,3 +4,5 @@ ccxt==4.2.14
 python-dotenv==1.0.0
 streamlit
 rich
+
+pytz==2024.1

@@ -5,6 +5,8 @@ from check_api import validate_binance_keys
 from buxex_brain import BuxexBrain
 from notifier import BuxexNotifier
 import traceback
+from datetime import datetime
+import pytz
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -19,13 +21,20 @@ class BuxexMasterCore:
         self.delay_segundos = 15 * 60 # 15 minutos entre varreduras
         
     def run_forever(self):
-        self.notifier.enviar_email("Iniciando BuxexCoin Bot", "O robô de cripto BuxexCoin acabou de ser iniciado no servidor.")
-        self.notifier.enviar_whatsapp("🚀 BuxexCoin SSAG Iniciado. Monitorando pares BTC/ETH/SOL.")
+        manaustz = pytz.timezone('America/Manaus')
+        hora_agora = datetime.now(manaustz).strftime("%d/%m/%Y %H:%M:%S")
+
+        self.notifier.enviar_email(
+             f"BuxexCoin SSAG Iniciado - {hora_agora}", 
+             f"O robô (modo {self.brain.executor.mode}) acabou de subir no horário de Manaus, configurado para R$ {self.brain.risk_manager.meta_diaria_usd} de meta."
+        )
+        self.notifier.enviar_whatsapp(f"🚀 *BuxexCoin SSAG UP!*\nHorário (MAO): {hora_agora}\nModo: {self.brain.executor.mode}")
 
         while True:
             try:
                 # Painel de Início do Ciclo
-                table = Table(title=f"⏳ Status do Ciclo - {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                hora_ciclo = datetime.now(manaustz).strftime("%Y-%m-%d %H:%M:%S")
+                table = Table(title=f"⏳ Status do Ciclo - {hora_ciclo}")
                 table.add_column("Módulo", justify="left", style="cyan", no_wrap=True)
                 table.add_column("Ação", style="magenta")
                 table.add_column("Status", justify="right", style="green")

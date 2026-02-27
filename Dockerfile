@@ -2,6 +2,10 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+# Definir Timezone GMT-4 (Manaus)
+ENV TZ=America/Manaus
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 # Instala dependências do sistema necessárias para algumas bibliotecas numéricas
 RUN apt-get update && apt-get install -y build-essential gcc
 
