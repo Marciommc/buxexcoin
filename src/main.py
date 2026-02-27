@@ -1,6 +1,7 @@
 import time
 import sys
 import os
+from check_api import validate_binance_keys
 from buxex_brain import BuxexBrain
 from notifier import BuxexNotifier
 import traceback
@@ -52,5 +53,9 @@ class BuxexMasterCore:
                 time.sleep(300) # Dorme 5 minutos em caso de queda de API/Timeout e tenta de novo
 
 if __name__ == "__main__":
+    if not validate_binance_keys():
+        print("Finalizando robô prematuramente devido a erro grave nas credenciais de API.")
+        sys.exit(1)
+        
     master = BuxexMasterCore()
     master.run_forever()

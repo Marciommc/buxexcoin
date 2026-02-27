@@ -82,6 +82,11 @@ class BuxexBrain:
                      db.close_trade(trade_id, fechamento_str, profit_pct, pnl_usd, motivo)
                      db.save_balance_history(datetime.datetime.now().strftime("%Y-%m-%d"), self.executor.mode, db.get_virtual_balance())
                      self.risk_manager.registrar_lucro(pnl_usd)
+                     
+                     meta = self.risk_manager.meta_diaria_usd
+                     lucro = self.risk_manager.lucro_diario_atual_usd
+                     prog_pct = (lucro / meta) * 100 if meta > 0 else 0
+                     self.notifier.alertar_trade(sym, prog_pct, meta)
             
             print(f"[BuxexBrain] Status Banca Virtual Atual: ${db.get_virtual_balance():.2f}")
 
@@ -161,16 +166,17 @@ class BuxexBrain:
                 # O Executor realiza a ação no mercado.
                 # Como criamos o Sandbox, enviamos as metragens do RiskProfile na ordem simulada.
                 result = self.executor.place_order(symbol=coin, quantity=position_size, side="buy", order_type="market", price=current_price, risk_profile=risk_profile)
+                # Se for operação real, logamos a ordem criada (O executor já cria diretamento pro bd caso seja sandbox)
                 if result.get("status") == "success":
                     print(f"[BuxexBrain] TRADE EXECUTADO COM SUCESSO na moeda {coin}!")
-                    self.notifier.enviar_whatsapp(f"✅ Nova Ordem de COMPRA Executada!\nMoeda: {coin}\nQuantidade: {position_size:.4f}\nPreço: ${current_price:.2f}")
-                else:
-                    print(f"[BuxexBrain] O TRADE FALHOU! {result}")
+                    meta = self.risk_manager.meta_diaria_usd
+                    lucro = self.risk_manager.lucro_diario_atual_usd
+                    prog_pct = (lucro / meta) * 100 if meta > 0 else 0
+                    self.notifier.alertar_trade(coin, prog_pct, meta)
                     
-                # Se for operação real, logamos a ordem criada (O executor já cria diretamento pro bd caso seja sandbox)
-                if not self.executor.sandbox_mode and result.get("status") == "success":
-                    db.insert_trade({
-                         "id": str(datetime.datetime.now().timestamp()),
+                    if not self.executor.sandbox_mode:
+                        db.insert_trade({
+                             "id": str(datetime.datetime.now().timestamp()),
                          "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                          "symbol": coin,
                          "type": "BUY",

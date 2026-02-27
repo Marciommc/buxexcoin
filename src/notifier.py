@@ -14,7 +14,9 @@ class BuxexNotifier:
         self.destinatario = os.getenv("EMAIL_DESTINO", "seu_email_destino@gmail.com")
         
         # Configuração WhatsApp (Exemplo via Webhook/Evolution API)
-        self.whatsapp_webhook = os.getenv("WHATSAPP_WEBHOOK", "https://seu-webhook.com/api/send")
+        self.whatsapp_webhook = os.getenv("WHATSAPP_WEBHOOK", "")
+        self.whatsapp_evol_apikey = os.getenv("EVOLUTION_API_KEY", "")
+        self.destinatario_zap = os.getenv("WHATSAPP_DESTINO", "5592992790506")
 
     def enviar_email(self, assunto, mensagem):
         if self.email_user == "seu_email@gmail.com":
@@ -35,17 +37,42 @@ class BuxexNotifier:
             print(f"❌ Erro ao enviar e-mail: {e}")
 
     def enviar_whatsapp(self, texto):
-        if self.whatsapp_webhook == "https://seu-webhook.com/api/send":
+        if not self.whatsapp_webhook:
             print(f"[Notifier] WhatsApp simulado: {texto}")
             return
             
-        payload = {"message": f"🤖 *BuxexCoin:* \n{texto}"}
+        headers = {"Content-Type": "application/json"}
+        if self.whatsapp_evol_apikey:
+            headers["apikey"] = self.whatsapp_evol_apikey
+            
+        payload = {
+            "number": self.destinatario_zap,
+            "options": {
+                "delay": 1200,
+                "presence": "composing"
+            },
+            "textMessage": {
+                "text": texto
+            }
+        }
+        
         try:
-            # Substitua pelo método de envio da sua API de preferência
-            requests.post(self.whatsapp_webhook, json=payload, timeout=5)
-            print("📲 Alerta enviado para o WhatsApp.")
+            resp = requests.post(self.whatsapp_webhook, json=payload, headers=headers, timeout=5)
+            if resp.status_code in (200, 201):
+                print("📲 Alerta enviado para o WhatsApp com sucesso.")
+            else:
+                print(f"❌ Erro ao enviar WhatsApp do Evolution: {resp.status_code} - {resp.text}")
         except Exception as e:
-            print(f"❌ Erro ao enviar WhatsApp: {e}")
+            print(f"❌ Erro de conexão com a Evolution API: {e}")
+
+    def alertar_trade(self, symbol: str, progresso_meta_pct: float, meta_valor: float):
+        msg = (
+            f"💰 *BuxexCoin - Alerta de Trade*\n"
+            f"Par: {symbol}\n"
+            f"Status: Meta de R$ {meta_valor:.2f} em {progresso_meta_pct:.1f}%!"
+        )
+        self.enviar_whatsapp(msg)
+
 
 # --- EXEMPLO DE USO NO BOT ---
 if __name__ == "__main__":
