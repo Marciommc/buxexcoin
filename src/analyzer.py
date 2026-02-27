@@ -27,6 +27,9 @@ class Analyzer:
         }
         
         # Como o endpoint sem chave falhará, caso ocorra exceção voltamos moedas dummy
+        # Stablecoins geram pares inválidos na Binance (ex: USDTUSDT)
+        STABLECOINS = {"USDT", "BUSD", "USDC", "DAI", "TUSD", "FDUSD"}
+
         try:
             if not self.cmc_api_key or self.cmc_api_key == "sua_chave_coinmarketcap":
                 print("[Analyzer] Chave de CMC não configurada, retornando ['BTCUSDT']")
@@ -37,9 +40,12 @@ class Analyzer:
             symbols = []
             
             for coin in data.get('data', []):
+                ticker = coin['symbol']
+                if ticker in STABLECOINS:
+                    continue  # Ignora stablecoins
                 quote = coin['quote']['USD']
                 if quote['volume_24h'] >= min_volume:
-                    symbol = f"{coin['symbol']}USDT"
+                    symbol = f"{ticker}USDT"
                     symbols.append(symbol)
                     
             return symbols
